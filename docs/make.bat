@@ -25,7 +25,6 @@ if errorlevel 9009 (
 	exit /b 1
 )
 
-sphinx-apidoc --force --output-dir %SOURCEDIR% ".."
 %SPHINXBUILD% -M %1 %SOURCEDIR% %BUILDDIR% %SPHINXOPTS% %O%
 goto end
 

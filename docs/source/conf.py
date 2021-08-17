@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.abspath('../..'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'Panthyr FLIR PTU-D48e'
+project = 'Panthyr DB'
 copyright = '2021, Dieter Vansteenwegen'
 author = 'Dieter Vansteenwegen'
 
