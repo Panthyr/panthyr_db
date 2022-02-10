@@ -28,7 +28,7 @@
 *.md       text diff=markdown
 *.csv      text
 *.tab      text
-*.txt      text
+*.txt      text eol=crlf
 *.sql      text
 *.ps1      text eol=crlf
 
