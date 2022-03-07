@@ -153,5 +153,5 @@ scratchpad/
 !.vscode/extensions.json
 workspace.code-workspace
 
-### Sphinx
-docs/build/
+### SQLite databases
+*.sqlite
