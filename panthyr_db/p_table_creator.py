@@ -38,15 +38,20 @@ class pTableCreator():
                  table_id: tuple = ('all', ),
                  populate_settings: bool = True,
                  owner: Union[tuple, None] = None):
-        """_summary_
+        """Create a new, empty database.
 
-        _extended_summary_
+        Use the definitions in p_db_definitions to create new tables.
 
         Args:
-            db_file (str, optional): _description_. Defaults to DATABASE_LOCATION.
-            table_id (tuple, optional): _description_. Defaults to ('all', ).
-            populate_settings (bool, optional): _description_. Defaults to True.
-            ownership (Union[tuple, None], optional): _description_. Defaults to None.
+            db_file (str, optional): filename including path. Defaults to DATABASE_LOCATION.
+            table_id (tuple, optional): tuple of tables to include. Defaults to ('all', ).
+                                A value of 'all' will include all tables in VALID_TABLES.
+            populate_settings (bool, optional): Fill the settings table with defaults.
+                                Defaults come from p_db_definitions.DEFAULT_SETTINGS.
+                                Defaults to True.
+            owner (Union[tuple, None], optional): Change group en user ownership.
+                                Provide name, not uid/gid.
+                                Defaults to None.
         """
 
         self.log = initialize_logger()
@@ -63,30 +68,52 @@ class pTableCreator():
             self._change_file_ownership(owner)
 
     def _check_if_file_exists(self):
+        """Check if the file exists. Exit if it does."""
+
         if path.isfile(self.db_file):
             self.log.error(
                 f'The file {self.db_file} exists on disk. Not doing anything.\n Quitting now...')
             sys.exit()
 
     def _check_table_list(self, table_id: tuple):
+        """Check if requested table list contains invalid entries.
+
+        Args:
+            table_id (tuple): tuple tables.
+
+        Raises:
+            Exception: If one of the entries is not valid.
+        """
         for t in table_id:
             if t != 'all' and t not in VALID_TABLES:
                 err_msg = f'{t} is not a valid table name. Valid: \'all\' or {VALID_TABLES}'
                 raise Exception(err_msg)
 
     def _create_db(self):
+        """Create the database on disk."""
         self.db = pDB(self.db_file)
         self._create_tables()
         self.db.commit()
 
     def _create_tables(self):
+        """Create the tables in the database, if requested."""
         self._add_protocol_table()
         self._add_logs_table()
         self._add_queue_table()
         self._add_measurements_table()
         self._add_settings_table()
 
-    def _generate_create_command(self, table):
+    def _generate_create_command(self, table: str) -> str:
+        """Prepare the command to create the table.
+
+        Use the definitions in p_db_definitions to generate a command for sqlite.
+
+        Args:
+            table (str): The table for which the command is intended.
+
+        Returns:
+            str: complete command for sqlite.
+        """
         cols: tuple = ()
 
         if table == 'measurements':
@@ -105,12 +132,14 @@ class pTableCreator():
         return f'{base_command}{columns_command[:-2]})'
 
     def _add_protocol_table(self):
+        """Create the protocol table if requested."""
         if 'protocol' in self._tables_to_generate:
             command = self._generate_create_command('protocol')
             with self.db:
                 self.db.execute(command)
 
     def _add_measurements_table(self):
+        """Create the measurements table if requested."""
         if 'measurements' in self._tables_to_generate:
             command = self._generate_create_command('measurements')
             command = f'{command[:-1]}, '
@@ -123,18 +152,24 @@ class pTableCreator():
                 self.db.execute(command)
 
     def _add_queue_table(self):
+        """Create the queue table if requested."""
         if 'queue' in self._tables_to_generate:
             command = self._generate_create_command('queue')
             with self.db:
                 self.db.execute(command)
 
     def _add_logs_table(self):
+        """Create the logs table if requested."""
         if 'logs' in self._tables_to_generate:
             command = self._generate_create_command('logs')
             with self.db:
                 self.db.execute(command)
 
     def _add_settings_table(self):
+        """Create the protocol table if requested.
+
+        Additionally, if set, populate with default settings from p_db_definitions.DEFAULT_SETTINGS
+        """
         if 'settings' in self._tables_to_generate:
             command = self._generate_create_command('settings')
             with self.db:
@@ -143,11 +178,17 @@ class pTableCreator():
                 self._populate_settings()
 
     def _populate_settings(self):
+        """Populate settings table with defaults from p_db_definitions.DEFAULT_SETTINGS"""
         with self.db:
             self.db.executemany('insert into settings(setting,value) values (?, ?)',
                                 (defs.DEFAULT_SETTINGS))
 
     def _change_file_ownership(self, owner: tuple):
+        """Change GID and UID on the database file.
+        Args:
+            owner (tuple): tuple containing (owner, group)
+        """
+
         import pwd
         import grp
         import os
