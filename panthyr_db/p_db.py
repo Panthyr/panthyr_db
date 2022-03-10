@@ -230,7 +230,13 @@ class pDB(sqlite3.Connection):
 
         self._c.execute(f'SELECT MAX(id) FROM {table}')
         # TODO check what is returned if table is empty
-        reply = self._c.fetchone()
+        try:
+            reply = self._c.fetchone()
+        except sqlite3.OperationalError:
+            err_str = f'Error getting last id from table {table}. Does table exist?'
+            self.log.exception(err_str)
+            raise
+
         try:
             rtn = int(reply[0])
         except TypeError:
@@ -239,12 +245,15 @@ class pDB(sqlite3.Connection):
         return rtn
 
     def export_data(self, target_db_name: str, table_ids: list):
+        # TODO
         pass
 
     def populate_credentials(self,
                              credentials_file: str = CREDENTIALS_FILE,
                              credentials: tuple = DEFAULT_CREDENTIALS):
+        # TODO
         pass
 
     def add_measurement(self, meas_dict: dict):
+        # TODO
         pass
