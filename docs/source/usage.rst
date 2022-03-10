@@ -4,9 +4,8 @@ Panthyr DB example code
 
 Example code:
 
-# TODO
-
 .. code:: python
+
     >>> from panthyr_db import p_db
     >>> db = p_db.pDB('./example.db')
 
