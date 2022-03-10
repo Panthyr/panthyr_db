@@ -101,6 +101,7 @@ class pDB(sqlite3.Connection):
 
         # No tasks with priority 1
         self._c.execute(cmd_template.format(priority=2))
+        reply = self._c.fetchone()
         return reply if type(reply) == tuple else None
 
     def set_task_handled(self, id: int, failed: bool = False):
@@ -132,16 +133,17 @@ class pDB(sqlite3.Connection):
         else:
             self._c.execute("update queue set done = '1' where id == ?", (id, ))
         self._commit_db()
-        return True
 
-    def get_setting(self, setting: str) -> Union[str, int]:
+    def get_setting(self, setting: str) -> Union[str, int, None]:
         """Return the value of a setting in the 'settings' table.
 
         Args:
             setting (str): setting id to be fetched.
 
         Returns:
-            Union[str, int]: integer if the setting is an int, str if not.
+            Union[str, int, None]: integer if the setting is an int, 
+                                    str if setting is a string,
+                                    None if setting is not in db.
         """
 
         try:
@@ -151,11 +153,11 @@ class pDB(sqlite3.Connection):
         except TypeError:
             err_str = f'Error while getting setting for {setting}, is setting in db?'
             self.log.exception(err_str)
-            raise
+            return None
 
         try:  # check if the value is an integer, if so return it as int
             return int(reply)
-        except TypeError:
+        except (TypeError, ValueError):
             return reply
 
     def set_setting(self, setting: str, value: str):
@@ -174,7 +176,6 @@ class pDB(sqlite3.Connection):
             self._c.execute('update settings set value = ? where setting = ?', (value, setting))
             self._commit_db()
 
-        # TODO correct exceptions
         except Exception:
             err_str = f'Error while setting setting {setting} to {value}'
             self.log.exception(err_str)
