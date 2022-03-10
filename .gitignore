@@ -155,3 +155,4 @@ workspace.code-workspace
 
 ### SQLite databases
 *.sqlite
+*.db
