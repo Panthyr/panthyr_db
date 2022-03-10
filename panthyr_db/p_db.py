@@ -80,7 +80,7 @@ class pDB(sqlite3.Connection):
         Queries the "queue" table in the database_location db for tasks where done = "0".
         Db is first queried for tasks with priority "1", then priority "2".
         Sorting is done by id (thus order of creation).
-        Returns the next job (if any) as a tuple (id, priority, action, options).
+        Returns the next job (if any) as a tuple (id, priority, action, options, fails).
 
         Priority col values: 1 = high priority (manually queued, ...), 2 = normal priority
         Done col values: 1 = done, 0 = to be done
