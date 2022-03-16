@@ -11,6 +11,7 @@ __project_link__ = 'https://waterhypernet.org/equipment/'
 from typing import Union
 import sqlite3  # Because ... Well...
 import logging
+from . import p_db_definitions as defs
 
 DATABASE_LOCATION = '/home/hypermaq/data/hypermaq.db'
 CREDENTIALS_FILE: str = '/home/hypermaq/data/credentials'
@@ -244,6 +245,80 @@ class pDB(sqlite3.Connection):
 
         return rtn
 
+    def add_measurement(self, meas_dict: dict):
+        """Sanitize and add measurement data to db
+
+        p_db_definitions.MEASUREMENTS_STORED is used as a reference for all required fields.
+        Fields not the given meas_dict are added as an empty string.
+        
+        Args:
+            meas_dict (dict): measurement data, may not contain all required fields.
+        """
+        meas_dict_clean = self._cleanup_measurement(meas_dict)
+
+        cmd, values = self._measurement_command(meas_dict_clean)
+
+        self.execute(cmd, values)
+        self._commit_db()
+
+    def _cleanup_measurement(self, meas_dict: dict) -> dict:
+        """Convert the given meas_dict to a default one.
+
+        Check given dict and add all items from p_db_definitions.MEASUREMENTS_STORED as well as
+        256 measurement items. If items are not available in the given dict, they are left empty.
+
+        Args:
+            meas_dict (dict): raw dictionnary to be cleaned
+
+        Returns:
+            dict: standard measurement dictionary with all required items
+        """
+        assert type(meas_dict) == dict
+        stored_values = defs.MEASUREMENTS_STORED
+        rtn_dict = {}
+
+        # fill in all required items
+        for var in stored_values:
+            if var in meas_dict:
+                # For scan/setup errors: convert list of errors to string
+                if var in ('scan_error', 'setup_error'):
+                    rtn_dict[var] = ' | '.join([str(x) for x in meas_dict[var]])
+                else:
+                    rtn_dict[var] = meas_dict[var]
+            else:
+                rtn_dict[var] = ''
+
+        # add measurement data
+        for i in range(1, 257):
+            try:
+                val = meas_dict['data'][i - 1]
+            except (KeyError, IndexError):  # not enough data values or data doesn't exist
+                val = ''
+            rtn_dict[f'val_{i:03d}'] = val
+
+        return rtn_dict
+
+    def _measurement_command(self, meas_dict_clean: dict) -> tuple[str, list]:
+        """Generate the SQLite command to store the measurement dict.
+
+        Args:
+            meas_dict_clean (dict): data to be stored in the measurement table
+
+        Returns:
+            tuple[str, list]: command for SQLite and the list of values.
+        """
+        columns = ''
+        placeholders = ''
+        values = []
+        for i in meas_dict_clean:
+            columns += 'f{i}, '
+            placeholders += '?, '
+            values.append(meas_dict_clean[i])
+
+        cmd = f'insert into measurements({columns[:-2]}) values ({placeholders[:-2]})'
+
+        return (cmd, values)
+
     def export_data(self, target_db_name: str, table_ids: list):
         # TODO
         pass
@@ -251,9 +326,5 @@ class pDB(sqlite3.Connection):
     def populate_credentials(self,
                              credentials_file: str = CREDENTIALS_FILE,
                              credentials: tuple = DEFAULT_CREDENTIALS):
-        # TODO
-        pass
-
-    def add_measurement(self, meas_dict: dict):
         # TODO
         pass
