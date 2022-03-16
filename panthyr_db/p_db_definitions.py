@@ -1,4 +1,12 @@
 # -*- coding: utf-8 -*-
+# Values that are stored for each measurement.
+# If these change, also update MEASUREMENTS_TABLE!
+MEASUREMENTS_STORED = ('timestamp', 'valid', 'setup_error', 'cycle_id', 'gnss_acquired',
+                       'gnss_qual', 'gnss_lat', 'gnss_lon', 'batt_voltage', 'head_voltage',
+                       'head_temp_hpt', 'cycle_scan', 'prot_sensor', 'prot_zenith', 'prot_azimuth',
+                       'sun_heading', 'sun_elevation', 'scan_heading', 'scan_error', 'scan_rep',
+                       'rep_error', 'rep_unix', 'rep_serial')
+
 MEASUREMENTS_TABLE = ('id integer primary key autoincrement',
                       'timestamp date default (datetime(\'now\', \'utc\'))',
                       'valid text default \'n\' collate nocase', 'setup_error text collate nocase',
