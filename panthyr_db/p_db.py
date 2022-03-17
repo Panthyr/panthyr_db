@@ -8,9 +8,11 @@ __email__ = 'dieter.vansteenwegen@vliz.be'
 __project__ = 'Panthyr'
 __project_link__ = 'https://waterhypernet.org/equipment/'
 
-from typing import Union
+from typing import Optional, Union
 import sqlite3  # Because ... Well...
 import logging
+
+from panthyr_db.p_table_creator import pTableCreator
 from . import p_db_definitions as defs
 
 DATABASE_LOCATION = '/home/hypermaq/data/hypermaq.db'
@@ -310,7 +312,7 @@ class pDB(sqlite3.Connection):
         columns = ''
         placeholders = ''
         values = []
-        for i in meas_dict_clean:
+        for i in meas_dict_clean:  # sourcery skip: replace-dict-items-with-values, use-dict-items
             columns += 'f{i}, '
             placeholders += '?, '
             values.append(meas_dict_clean[i])
@@ -319,9 +321,107 @@ class pDB(sqlite3.Connection):
 
         return (cmd, values)
 
-    def export_data(self, target_db_name: str, table_ids: list):
-        # TODO
-        pass
+    def export_data(self, target_db: str, table_ids: tuple[tuple[str, Optional[int],
+                                                                 Optional[int]]]):
+        """Exports data from selected tables and ranges to new database.
+
+        Args:
+            target_db (str): full path/filename of target db
+            table_ids (tuple[tuple[str, Optional[int], Optional[int]]]): a tuple of tuples,
+                                one for each table that needs to be exporting.
+                                optionally, provide start and stop id to export
+        """
+        if not table_ids:
+            self.log.warning('no tables have been specified')
+            return
+
+        self._create_export_target(target_db=target_db, table_ids=table_ids)
+        self._export_to_target(target_db=target_db, table_ids=table_ids)
+
+    def _create_export_target(self, target_db: str, table_ids: tuple[tuple[str, Optional[int],
+                                                                           Optional[int]]]):
+        """Create a blank database to export to.
+
+        Args:
+            target_db (str): full path/filename of target db
+            table_ids (tuple[tuple[str, Optional[int], Optional[int]]]): a tuple of tuples,
+                                one for each table that needs to be exporting.
+                                optionally, provide start:int and stop:int to export (ignored here)
+        """
+        tables = tuple(i[0] for i in table_ids)
+        pTableCreator(db_file=target_db, tables=tables)
+
+    def _export_to_target(self, target_db: str, table_ids: tuple[tuple[str, Optional[int],
+                                                                       Optional[int]]]):
+        """Export the requested tables/ranges to the new database.
+
+        For each tuple in the table_ids, export the table to the new database.
+        If start is defined, only export id's higher than start id.
+        if start and stop are defined, only export range between id's
+
+        Args:
+            target_db (str): full path/filename of target db
+            table_ids (tuple[tuple[str, Optional[int], Optional[int]]]): a tuple of tuples,
+                                one for each table that needs to be exporting.
+                                optionally, provide start:int and stop:int to export
+        """
+        try:
+            self.execute('ATTACH DATABASE ? AS target_db', (target_db, ))
+            for table in table_ids:
+                if cmd := self._generate_export_cmd(table):
+                    if type(cmd) == str:
+                        self.execute(cmd)
+                    else:
+                        self.execute(cmd[0], cmd[1])
+        finally:
+            self.execute("DETACH DATABASE 'target_db'")
+
+    def _generate_export_cmd(
+            self, table: tuple[str, Optional[int],
+                               Optional[int]]) -> Union[tuple[str, list], str, None]:
+        """Generate command to export table.
+
+        If start id is given, export starting at that id
+        If stop id is given, export until that id -1
+
+        Args:
+            table (tuple[str, Optional[int], Optional[int]]): table name, start id, stop id
+
+        Returns:
+            Union[tuple[str, list], str, None]: None if the id's are not correct
+                                        str if the command does not include substitutions
+                                        tuple if a command and substitution is necessary.
+        """
+        table_name = table[0]
+        start = table[1] if len(table) > 1 else None
+        stop = table[2] if len(table) > 2 else None
+
+        cmd = f'INSERT INTO target_db.{table_name} SELECT * FROM {table_name}'
+
+        if start or stop:  # not all ids need to be exported
+            substitution = []
+            cmd += ' WHERE id '
+            if start and stop:
+                if not start < stop:
+                    self.log.warning(f'trying to export {table}, but end id {stop} '
+                                     f'is not lower than start_id ({start}). '
+                                     f'Skipping this table')
+                    return None
+                cmd += 'BETWEEN ? AND ?'
+                substitution += [start, stop - 1]
+            elif start:
+                cmd += '> ?'
+                substitution += [
+                    start - 1,
+                ]
+            elif stop:
+                cmd += '< ?'
+                substitution += [
+                    stop,
+                ]
+            return (cmd, substitution)
+        else:
+            return cmd
 
     def populate_credentials(self,
                              credentials_file: str = CREDENTIALS_FILE,
