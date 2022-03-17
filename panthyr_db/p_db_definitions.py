@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+
+DATABASE_LOCATION = '/home/hypermaq/data/hypermaq.db'
 # Values that are stored for each measurement.
 # If these change, also update MEASUREMENTS_TABLE!
 MEASUREMENTS_STORED = ('timestamp', 'valid', 'setup_error', 'cycle_id', 'gnss_acquired',

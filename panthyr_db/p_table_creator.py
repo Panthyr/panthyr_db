@@ -9,8 +9,7 @@ __project__ = 'Panthyr'
 __project_link__ = 'https://waterhypernet.org/equipment/'
 
 from typing import Union
-from .p_db import DATABASE_LOCATION
-from .p_db import pDB
+from sqlite3 import Connection
 from . import p_db_definitions as defs
 from os import path
 import logging
@@ -34,7 +33,7 @@ def initialize_logger() -> logging.Logger:
 class pTableCreator():
 
     def __init__(self,
-                 db_file: str = DATABASE_LOCATION,
+                 db_file: str = defs.DATABASE_LOCATION,
                  tables: tuple = ('all', ),
                  populate_settings: bool = True,
                  owner: Union[tuple, None] = None):
@@ -43,7 +42,7 @@ class pTableCreator():
         Use the definitions in p_db_definitions to create new tables.
 
         Args:
-            db_file (str, optional): filename including path. Defaults to DATABASE_LOCATION.
+            db_file (str, optional): filename including path. Defaults to defs.DATABASE_LOCATION.
             tables (tuple, optional): tuple of tables to include. Defaults to ('all', ).
                                 A value of 'all' will include all tables in VALID_TABLES.
             populate_settings (bool, optional): Fill the settings table with defaults.
@@ -95,7 +94,7 @@ class pTableCreator():
         if not path.isdir(dir_name):
             from os import makedirs
             makedirs(dir_name)
-        self.db = pDB(self.db_file)
+        self.db = Connection(self.db_file)
         self._create_tables()
         self.db.commit()
 

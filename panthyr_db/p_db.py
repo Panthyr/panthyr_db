@@ -15,7 +15,6 @@ import logging
 from panthyr_db.p_table_creator import pTableCreator
 from . import p_db_definitions as defs
 
-DATABASE_LOCATION = '/home/hypermaq/data/hypermaq.db'
 CREDENTIALS_FILE: str = '/home/hypermaq/data/credentials'
 DEFAULT_CREDENTIALS: tuple = ('email_user', 'email_password', 'email_server_port', 'ftp_server',
                               'ftp_user', 'ftp_password')
@@ -35,14 +34,14 @@ def initialize_logger() -> logging.Logger:
 
 class pDB(sqlite3.Connection):
 
-    def __init__(self, database: str = DATABASE_LOCATION, **kwargs):
+    def __init__(self, database: str = defs.DATABASE_LOCATION, **kwargs):
         """_summary_
 
         _extended_summary_
 
         Args:
             database (str, optional): filename (including path of db). 
-                        Defaults to DATABASE_LOCATION.
+                        Defaults to defs.DATABASE_LOCATION.
         """
         super(pDB, self).__init__(database=database, **kwargs)
         self._c = self.cursor()  # cursor object
