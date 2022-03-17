@@ -45,4 +45,6 @@ Example code:
     >>> db.get_protocol()[0]
     {'id': 1, 'instrument': 'e', 'zenith': 180, 'azimuth': 90, 'repeat': 3, 'wait': 0}
 
-    
+    # Export data to a non-existing database backup.db. 
+    # Export measurements starting at id 10 and logs with id's between 50 and 60         
+    >>> db.export_data('./backup.db', (('measurements',10),('logs',50,60)))
