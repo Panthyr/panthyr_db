@@ -69,7 +69,7 @@ instance/
 .scrapy
 
 # Sphinx documentation
-docs/_build/
+docs/build/
 
 # PyBuilder
 target/
@@ -153,5 +153,6 @@ scratchpad/
 !.vscode/extensions.json
 workspace.code-workspace
 
-### Sphinx
-docs/build/
+### SQLite databases
+*.sqlite
+*.db
