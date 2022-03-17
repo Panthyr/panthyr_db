@@ -35,7 +35,7 @@ class pTableCreator():
 
     def __init__(self,
                  db_file: str = DATABASE_LOCATION,
-                 table_id: tuple = ('all', ),
+                 tables: tuple = ('all', ),
                  populate_settings: bool = True,
                  owner: Union[tuple, None] = None):
         """Create a new, empty database.
@@ -44,7 +44,7 @@ class pTableCreator():
 
         Args:
             db_file (str, optional): filename including path. Defaults to DATABASE_LOCATION.
-            table_id (tuple, optional): tuple of tables to include. Defaults to ('all', ).
+            tables (tuple, optional): tuple of tables to include. Defaults to ('all', ).
                                 A value of 'all' will include all tables in VALID_TABLES.
             populate_settings (bool, optional): Fill the settings table with defaults.
                                 Defaults come from p_db_definitions.DEFAULT_SETTINGS.
@@ -58,8 +58,8 @@ class pTableCreator():
         self.db_file = db_file
 
         self._check_if_file_exists()
-        self._check_table_list(table_id)
-        self._tables_to_generate = table_id if table_id != ('all', ) else VALID_TABLES
+        self._check_table_list(tables)
+        self._tables_to_generate = tables if tables != ('all', ) else VALID_TABLES
         self.populate_settings = populate_settings
         self._create_db()
         self.db.close()
@@ -75,22 +75,26 @@ class pTableCreator():
                 f'The file {self.db_file} exists on disk. Not doing anything.\n Quitting now...')
             sys.exit()
 
-    def _check_table_list(self, table_id: tuple):
+    def _check_table_list(self, tables: tuple):
         """Check if requested table list contains invalid entries.
 
         Args:
-            table_id (tuple): tuple tables.
+            tables (tuple): tuple tables.
 
         Raises:
             Exception: If one of the entries is not valid.
         """
-        for t in table_id:
+        for t in tables:
             if t != 'all' and t not in VALID_TABLES:
                 err_msg = f'{t} is not a valid table name. Valid: \'all\' or {VALID_TABLES}'
                 raise Exception(err_msg)
 
     def _create_db(self):
         """Create the database on disk."""
+        dir_name = path.dirname(self.db_file)
+        if not path.isdir(dir_name):
+            from os import makedirs
+            makedirs(dir_name)
         self.db = pDB(self.db_file)
         self._create_tables()
         self.db.commit()
