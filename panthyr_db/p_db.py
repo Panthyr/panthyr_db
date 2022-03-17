@@ -321,7 +321,7 @@ class pDB(sqlite3.Connection):
         return (cmd, values)
 
     def export_data(self, target_db: str, table_ids: tuple[tuple[str, Optional[int],
-                                                                 Optional[int]]]):
+                                                                 Optional[int]]]) -> None:
         """Exports data from selected tables and ranges to new database.
 
         Args:
@@ -333,12 +333,14 @@ class pDB(sqlite3.Connection):
         if not table_ids:
             self.log.warning('no tables have been specified')
             return
-
+        if any(type(i) != tuple for i in table_ids):
+            self.log.error('Invalid argument passed for table_ids: should be a tuple of tuples')
+            return
         self._create_export_target(target_db=target_db, table_ids=table_ids)
         self._export_to_target(target_db=target_db, table_ids=table_ids)
 
-    def _create_export_target(self, target_db: str, table_ids: tuple[tuple[str, Optional[int],
-                                                                           Optional[int]]]):
+    def _create_export_target(self, target_db: str,
+                              table_ids: tuple[tuple[str, Optional[int], Optional[int]]]) -> None:
         """Create a blank database to export to.
 
         Args:
@@ -351,7 +353,7 @@ class pDB(sqlite3.Connection):
         pTableCreator(db_file=target_db, tables=tables)
 
     def _export_to_target(self, target_db: str, table_ids: tuple[tuple[str, Optional[int],
-                                                                       Optional[int]]]):
+                                                                       Optional[int]]]) -> None:
         """Export the requested tables/ranges to the new database.
 
         For each tuple in the table_ids, export the table to the new database.
@@ -364,16 +366,15 @@ class pDB(sqlite3.Connection):
                                 one for each table that needs to be exporting.
                                 optionally, provide start:int and stop:int to export
         """
-        try:
-            self.execute('ATTACH DATABASE ? AS target_db', (target_db, ))
-            for table in table_ids:
-                if cmd := self._generate_export_cmd(table):
-                    if type(cmd) == str:
-                        self.execute(cmd)
-                    else:
-                        self.execute(cmd[0], cmd[1])
-        finally:
-            self.execute("DETACH DATABASE 'target_db'")
+        self.execute('ATTACH DATABASE ? AS target_db', (target_db, ))
+        for table in table_ids:
+            if cmd := self._generate_export_cmd(table):
+                if type(cmd) == str:
+                    self.execute(cmd)
+                else:
+                    self.execute(cmd[0], cmd[1])
+        self._commit_db()
+        self.execute('DETACH DATABASE "target_db"')
 
     def _generate_export_cmd(
             self, table: tuple[str, Optional[int],
@@ -407,7 +408,7 @@ class pDB(sqlite3.Connection):
                                      f'Skipping this table')
                     return None
                 cmd += 'BETWEEN ? AND ?'
-                substitution += [start, stop - 1]
+                substitution += [start - 1, stop]
             elif start:
                 cmd += '> ?'
                 substitution += [
