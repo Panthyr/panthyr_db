@@ -8,7 +8,7 @@ __email__ = 'dieter.vansteenwegen@vliz.be'
 __project__ = 'Panthyr'
 __project_link__ = 'https://waterhypernet.org/equipment/'
 
-from typing import Optional, Union
+from typing import List, Optional, Union
 import sqlite3  # Because ... Well...
 import logging
 
@@ -193,7 +193,7 @@ class pDB(sqlite3.Connection):
             self.log.exception(err_str)
             raise
 
-    def get_protocol(self) -> list[dict]:
+    def get_protocol(self) -> List[dict]:
         """Get the protocol from the protocol table.
 
         Returns:
@@ -391,7 +391,8 @@ class pDB(sqlite3.Connection):
         """
         self.execute('ATTACH DATABASE ? AS target_db', (target_db,))
         for table in table_ids:
-            if cmd := self._generate_export_cmd(table):
+            cmd = self._generate_export_cmd(table)
+            if cmd:
                 if type(cmd) == str:
                     self.execute(cmd)
                 else:
