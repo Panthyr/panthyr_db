@@ -391,7 +391,8 @@ class pDB(sqlite3.Connection):
         """
         self.execute('ATTACH DATABASE ? AS target_db', (target_db,))
         for table in table_ids:
-            if cmd := self._generate_export_cmd(table):
+            cmd = self._generate_export_cmd(table)
+            if cmd:
                 if type(cmd) == str:
                     self.execute(cmd)
                 else:
