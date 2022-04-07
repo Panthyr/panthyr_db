@@ -32,11 +32,13 @@ def initialize_logger() -> logging.Logger:
 
 class pTableCreator():
 
-    def __init__(self,
-                 db_file: str = defs.DATABASE_LOCATION,
-                 tables: tuple = ('all', ),
-                 populate_settings: bool = True,
-                 owner: Union[tuple, None] = None):
+    def __init__(
+        self,
+        db_file: str = defs.DATABASE_LOCATION,
+        tables: tuple = ('all',),
+        populate_settings: bool = True,
+        owner: Union[tuple, None] = None,
+    ):
         """Create a new, empty database.
 
         Use the definitions in p_db_definitions to create new tables.
@@ -58,7 +60,7 @@ class pTableCreator():
 
         self._check_if_file_exists()
         self._check_table_list(tables)
-        self._tables_to_generate = tables if tables != ('all', ) else VALID_TABLES
+        self._tables_to_generate = tables if tables != ('all',) else VALID_TABLES
         self.populate_settings = populate_settings
         self._create_db()
         self.db.close()
@@ -71,7 +73,8 @@ class pTableCreator():
 
         if path.isfile(self.db_file):
             self.log.error(
-                f'The file {self.db_file} exists on disk. Not doing anything.\n Quitting now...')
+                f'The file {self.db_file} exists on disk. Not doing anything.\n Quitting now...',
+            )
             sys.exit()
 
     def _check_table_list(self, tables: tuple):
@@ -183,8 +186,10 @@ class pTableCreator():
     def _populate_settings(self):
         """Populate settings table with defaults from p_db_definitions.DEFAULT_SETTINGS"""
         with self.db:
-            self.db.executemany('insert into settings(setting,value) values (?, ?)',
-                                (defs.DEFAULT_SETTINGS))
+            self.db.executemany(
+                'insert into settings(setting,value) values (?, ?)',
+                (defs.DEFAULT_SETTINGS),
+            )
 
     def _change_file_ownership(self, owner: tuple):
         """Change GID and UID on the database file.
@@ -201,7 +206,8 @@ class pTableCreator():
             gid = grp.getgrnam(owner[1]).gr_gid
         except KeyError:
             self.log.exception(
-                f'Could not get uid/gid for {owner[0]}/{owner[1]}. Not setting uid/gid.')
+                f'Could not get uid/gid for {owner[0]}/{owner[1]}. Not setting uid/gid.',
+            )
             raise
         try:
             os.chown(self.db_file, uid, gid)  # noqa

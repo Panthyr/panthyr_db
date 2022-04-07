@@ -16,8 +16,14 @@ from panthyr_db.p_table_creator import pTableCreator
 from . import p_db_definitions as defs
 
 CREDENTIALS_FILE: str = '/home/hypermaq/data/credentials'
-DEFAULT_CREDENTIALS: tuple = ('email_user', 'email_password', 'email_server_port', 'ftp_server',
-                              'ftp_user', 'ftp_password')
+DEFAULT_CREDENTIALS: tuple = (
+    'email_user',
+    'email_password',
+    'email_server_port',
+    'ftp_server',
+    'ftp_user',
+    'ftp_password',
+)
 
 
 def initialize_logger() -> logging.Logger:
@@ -40,7 +46,7 @@ class pDB(sqlite3.Connection):
         _extended_summary_
 
         Args:
-            database (str, optional): filename (including path of db). 
+            database (str, optional): filename (including path of db).
                         Defaults to defs.DATABASE_LOCATION.
         """
         super(pDB, self).__init__(database=database, **kwargs)
@@ -72,8 +78,10 @@ class pDB(sqlite3.Connection):
             options (str, optional): option field (arguments). Defaults to ''.
         """
 
-        self.execute('insert into queue(priority, action, options) values (? ,? ,?)',
-                     (priority, task, options))
+        self.execute(
+            'insert into queue(priority, action, options) values (? ,? ,?)',
+            (priority, task, options),
+        )
         self._commit_db()
 
     def get_next_task(self) -> Union[None, tuple]:
@@ -91,8 +99,10 @@ class pDB(sqlite3.Connection):
             Union[None, tuple]: a tuple if a task was returned, None if not.
         """
 
-        cmd_template = ('select id, priority, action, options, fails from queue where'
-                        ' done == 0 and priority == {priority} and fails < 3 order by id limit 1')
+        cmd_template = (
+            'select id, priority, action, options, fails from queue where'
+            ' done == 0 and priority == {priority} and fails < 3 order by id limit 1'
+        )
 
         # try to get task with priority 1
         self._c.execute(cmd_template.format(priority=1))
@@ -114,8 +124,8 @@ class pDB(sqlite3.Connection):
 
         Args:
             id (int): task id
-            failed (bool, optional): task has failed. 
-                    Do not set done field but increment fails. 
+            failed (bool, optional): task has failed.
+                    Do not set done field but increment fails.
                     Defaults to False.
 
         Raises:
@@ -128,12 +138,12 @@ class pDB(sqlite3.Connection):
             raise TypeError(msg)
 
         if failed:
-            query = f'select fails from queue where id == {id}'
+            query = f'select fails from queue where id == {id}'  #nosec B608
             self._c.execute(query)
             fails = int(self._c.fetchone()[0])
             self._c.execute('update queue set fails = ? where id == ?', (fails + 1, id))
         else:
-            self._c.execute("update queue set done = '1' where id == ?", (id, ))
+            self._c.execute("update queue set done = '1' where id == ?", (id,))
         self._commit_db()
 
     def get_setting(self, setting: str) -> Union[str, int, None]:
@@ -143,13 +153,13 @@ class pDB(sqlite3.Connection):
             setting (str): setting id to be fetched.
 
         Returns:
-            Union[str, int, None]: integer if the setting is an int, 
+            Union[str, int, None]: integer if the setting is an int,
                                     str if setting is a string,
                                     None if setting is not in db.
         """
 
         try:
-            self._c.execute('SELECT value FROM settings WHERE setting = ?', (setting, ))
+            self._c.execute('SELECT value FROM settings WHERE setting = ?', (setting,))
             reply = self._c.fetchone()[0]
 
         except TypeError:
@@ -164,7 +174,7 @@ class pDB(sqlite3.Connection):
 
     def set_setting(self, setting: str, value: str):
         """Adds or changes settings in the the 'settings' table.
-        
+
         Updates setting in table if it is already available, else creates new id.
 
         Args:
@@ -174,7 +184,7 @@ class pDB(sqlite3.Connection):
 
         try:
             # creates a new setting (row) if it doesn't exist, else does nothing
-            self._c.execute('insert or ignore into settings(setting) VALUES(?)', (setting, ))
+            self._c.execute('insert or ignore into settings(setting) VALUES(?)', (setting,))
             self._c.execute('update settings set value = ? where setting = ?', (value, setting))
             self._commit_db()
 
@@ -199,14 +209,16 @@ class pDB(sqlite3.Connection):
 
         # TODO check return
         # TODO what if no protocol defined?
-        return [{
-            'id': i,
-            'instrument': s[0].lower(),
-            'zenith': s[1],
-            'azimuth': s[2],
-            'repeat': s[3],
-            'wait': s[4]
-        } for i, s in enumerate(response, start=1)]
+        return [
+            {
+                'id': i,
+                'instrument': s[0].lower(),
+                'zenith': s[1],
+                'azimuth': s[2],
+                'repeat': s[3],
+                'wait': s[4],
+            } for i, s in enumerate(response, start=1)
+        ]
 
     def add_log(self, logtext: str, source: str = 'none', level: str = 'info'):
         """Adds logtext into the logs table.
@@ -216,8 +228,10 @@ class pDB(sqlite3.Connection):
             source (str, optional): module name. Defaults to 'none'.
             level (str, optional): severity. Defaults to 'info'.
         """
-        self.execute('insert into logs(level, source, log) values (?, ?, ?)',
-                     (level, source, logtext))
+        self.execute(
+            'insert into logs(level, source, log) values (?, ?, ?)',
+            (level, source, logtext),
+        )
         self._commit_db()
 
     def get_last_id(self, table: str) -> Union[int, None]:
@@ -230,7 +244,7 @@ class pDB(sqlite3.Connection):
             Union[int,None]: highest id or None if table is empty
         """
 
-        self._c.execute(f'SELECT MAX(id) FROM {table}')
+        self._c.execute(f'SELECT MAX(id) FROM {table}')  #nosec B608
         # TODO check what is returned if table is empty
         try:
             reply = self._c.fetchone()
@@ -251,7 +265,7 @@ class pDB(sqlite3.Connection):
 
         p_db_definitions.MEASUREMENTS_STORED is used as a reference for all required fields.
         Fields not the given meas_dict are added as an empty string.
-        
+
         Args:
             meas_dict (dict): measurement data, may not contain all required fields.
         """
@@ -274,7 +288,7 @@ class pDB(sqlite3.Connection):
         Returns:
             dict: standard measurement dictionary with all required items
         """
-        assert type(meas_dict) == dict
+        assert type(meas_dict) == dict  #nosecB101
         stored_values = defs.MEASUREMENTS_STORED
         rtn_dict = {}
 
@@ -320,8 +334,11 @@ class pDB(sqlite3.Connection):
 
         return (cmd, values)
 
-    def export_data(self, target_db: str, table_ids: tuple[tuple[str, Optional[int],
-                                                                 Optional[int]]]) -> None:
+    def export_data(
+        self,
+        target_db: str,
+        table_ids: tuple[tuple[str, Optional[int], Optional[int]]],
+    ) -> None:
         """Exports data from selected tables and ranges to new database.
 
         Args:
@@ -339,8 +356,11 @@ class pDB(sqlite3.Connection):
         self._create_export_target(target_db=target_db, table_ids=table_ids)
         self._export_to_target(target_db=target_db, table_ids=table_ids)
 
-    def _create_export_target(self, target_db: str,
-                              table_ids: tuple[tuple[str, Optional[int], Optional[int]]]) -> None:
+    def _create_export_target(
+        self,
+        target_db: str,
+        table_ids: tuple[tuple[str, Optional[int], Optional[int]]],
+    ) -> None:
         """Create a blank database to export to.
 
         Args:
@@ -352,8 +372,11 @@ class pDB(sqlite3.Connection):
         tables = tuple(i[0] for i in table_ids)
         pTableCreator(db_file=target_db, tables=tables)
 
-    def _export_to_target(self, target_db: str, table_ids: tuple[tuple[str, Optional[int],
-                                                                       Optional[int]]]) -> None:
+    def _export_to_target(
+        self,
+        target_db: str,
+        table_ids: tuple[tuple[str, Optional[int], Optional[int]]],
+    ) -> None:
         """Export the requested tables/ranges to the new database.
 
         For each tuple in the table_ids, export the table to the new database.
@@ -366,7 +389,7 @@ class pDB(sqlite3.Connection):
                                 one for each table that needs to be exporting.
                                 optionally, provide start:int and stop:int to export
         """
-        self.execute('ATTACH DATABASE ? AS target_db', (target_db, ))
+        self.execute('ATTACH DATABASE ? AS target_db', (target_db,))
         for table in table_ids:
             if cmd := self._generate_export_cmd(table):
                 if type(cmd) == str:
@@ -377,8 +400,9 @@ class pDB(sqlite3.Connection):
         self.execute('DETACH DATABASE "target_db"')
 
     def _generate_export_cmd(
-            self, table: tuple[str, Optional[int],
-                               Optional[int]]) -> Union[tuple[str, list], str, None]:
+        self,
+        table: tuple[str, Optional[int], Optional[int]],
+    ) -> Union[tuple[str, list], str, None]:
         """Generate command to export table.
 
         If start id is given, export starting at that id
@@ -396,16 +420,17 @@ class pDB(sqlite3.Connection):
         start = table[1] if len(table) > 1 else None
         stop = table[2] if len(table) > 2 else None
 
-        cmd = f'INSERT INTO target_db.{table_name} SELECT * FROM {table_name}'
+        cmd = f'INSERT INTO target_db.{table_name} SELECT * FROM {table_name}'  #nosecB608
 
         if start or stop:  # not all ids need to be exported
             substitution = []
             cmd += ' WHERE id '
             if start and stop:
                 if not start < stop:
-                    self.log.warning(f'trying to export {table}, but end id {stop} '
-                                     f'is not lower than start_id ({start}). '
-                                     f'Skipping this table')
+                    self.log.warning(
+                        f'trying to export {table}, but end id {stop} '
+                        f'is not lower than start_id ({start}). '
+                        f'Skipping this table', )
                     return None
                 cmd += 'BETWEEN ? AND ?'
                 substitution += [start - 1, stop]
@@ -423,8 +448,10 @@ class pDB(sqlite3.Connection):
         else:
             return cmd
 
-    def populate_credentials(self,
-                             credentials_file: str = CREDENTIALS_FILE,
-                             credentials: tuple = DEFAULT_CREDENTIALS):
+    def populate_credentials(
+        self,
+        credentials_file: str = CREDENTIALS_FILE,
+        credentials: tuple = DEFAULT_CREDENTIALS,
+    ):
         # TODO
         pass
