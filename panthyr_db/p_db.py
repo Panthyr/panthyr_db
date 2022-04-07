@@ -8,7 +8,7 @@ __email__ = 'dieter.vansteenwegen@vliz.be'
 __project__ = 'Panthyr'
 __project_link__ = 'https://waterhypernet.org/equipment/'
 
-from typing import List, Optional, Union
+from typing import List, Optional, Tuple, Union
 import sqlite3  # Because ... Well...
 import logging
 
@@ -313,14 +313,14 @@ class pDB(sqlite3.Connection):
 
         return rtn_dict
 
-    def _measurement_command(self, meas_dict_clean: dict) -> tuple[str, list]:
+    def _measurement_command(self, meas_dict_clean: dict) -> Tuple[str, list]:
         """Generate the SQLite command to store the measurement dict.
 
         Args:
             meas_dict_clean (dict): data to be stored in the measurement table
 
         Returns:
-            tuple[str, list]: command for SQLite and the list of values.
+            Tuple[str, list]: command for SQLite and the list of values.
         """
         columns = ''
         placeholders = ''
@@ -337,13 +337,13 @@ class pDB(sqlite3.Connection):
     def export_data(
         self,
         target_db: str,
-        table_ids: tuple[tuple[str, Optional[int], Optional[int]]],
+        table_ids: Tuple[Tuple[str, Optional[int], Optional[int]]],
     ) -> None:
         """Exports data from selected tables and ranges to new database.
 
         Args:
             target_db (str): full path/filename of target db
-            table_ids (tuple[tuple[str, Optional[int], Optional[int]]]): a tuple of tuples,
+            table_ids (Tuple[Tuple[str, Optional[int], Optional[int]]]): a tuple of tuples,
                                 one for each table that needs to be exporting.
                                 optionally, provide start and stop id to export
         """
@@ -359,13 +359,13 @@ class pDB(sqlite3.Connection):
     def _create_export_target(
         self,
         target_db: str,
-        table_ids: tuple[tuple[str, Optional[int], Optional[int]]],
+        table_ids: Tuple[Tuple[str, Optional[int], Optional[int]]],
     ) -> None:
         """Create a blank database to export to.
 
         Args:
             target_db (str): full path/filename of target db
-            table_ids (tuple[tuple[str, Optional[int], Optional[int]]]): a tuple of tuples,
+            table_ids (Tuple[Tuple[str, Optional[int], Optional[int]]]): a tuple of tuples,
                                 one for each table that needs to be exporting.
                                 optionally, provide start:int and stop:int to export (ignored here)
         """
@@ -375,7 +375,7 @@ class pDB(sqlite3.Connection):
     def _export_to_target(
         self,
         target_db: str,
-        table_ids: tuple[tuple[str, Optional[int], Optional[int]]],
+        table_ids: Tuple[Tuple[str, Optional[int], Optional[int]]],
     ) -> None:
         """Export the requested tables/ranges to the new database.
 
@@ -385,7 +385,7 @@ class pDB(sqlite3.Connection):
 
         Args:
             target_db (str): full path/filename of target db
-            table_ids (tuple[tuple[str, Optional[int], Optional[int]]]): a tuple of tuples,
+            table_ids (Tuple[Tuple[str, Optional[int], Optional[int]]]): a tuple of tuples,
                                 one for each table that needs to be exporting.
                                 optionally, provide start:int and stop:int to export
         """
@@ -402,18 +402,18 @@ class pDB(sqlite3.Connection):
 
     def _generate_export_cmd(
         self,
-        table: tuple[str, Optional[int], Optional[int]],
-    ) -> Union[tuple[str, list], str, None]:
+        table: Tuple[str, Optional[int], Optional[int]],
+    ) -> Union[Tuple[str, list], str, None]:
         """Generate command to export table.
 
         If start id is given, export starting at that id
         If stop id is given, export until that id -1
 
         Args:
-            table (tuple[str, Optional[int], Optional[int]]): table name, start id, stop id
+            table (Tuple[str, Optional[int], Optional[int]]): table name, start id, stop id
 
         Returns:
-            Union[tuple[str, list], str, None]: None if the id's are not correct
+            Union[Tuple[str, list], str, None]: None if the id's are not correct
                                         str if the command does not include substitutions
                                         tuple if a command and substitution is necessary.
         """
