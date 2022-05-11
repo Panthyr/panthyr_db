@@ -18,18 +18,6 @@ import sys
 VALID_TABLES = ('protocol', 'settings', 'measurements', 'queue', 'logs')
 
 
-def initialize_logger() -> logging.Logger:
-    """Set up logger
-    If the module is ran as a module, name logger accordingly as a sublogger.
-    Returns:
-        logging.Logger: logger instance
-    """
-    if __name__ == '__main__':
-        return logging.getLogger('{}'.format(__name__))
-    else:
-        return logging.getLogger('__main__.{}'.format(__name__))
-
-
 class pTableCreator():
 
     def __init__(
@@ -54,8 +42,7 @@ class pTableCreator():
                                 Provide name, not uid/gid.
                                 Defaults to None.
         """
-
-        self.log = initialize_logger()
+        self.log = logging.getLogger()
         self.db_file = db_file
 
         self._check_if_file_exists()
@@ -73,8 +60,7 @@ class pTableCreator():
 
         if path.isfile(self.db_file):
             self.log.error(
-                f'The file {self.db_file} exists on disk. Not doing anything.\n Quitting now...',
-            )
+                f'The file {self.db_file} exists on disk. Not doing anything.\n Quitting now...', )
             sys.exit()
 
     def _check_table_list(self, tables: tuple):
@@ -206,8 +192,7 @@ class pTableCreator():
             gid = grp.getgrnam(owner[1]).gr_gid
         except KeyError:
             self.log.exception(
-                f'Could not get uid/gid for {owner[0]}/{owner[1]}. Not setting uid/gid.',
-            )
+                f'Could not get uid/gid for {owner[0]}/{owner[1]}. Not setting uid/gid.', )
             raise
         try:
             os.chown(self.db_file, uid, gid)  # noqa

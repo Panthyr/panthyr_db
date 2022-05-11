@@ -138,7 +138,7 @@ class pDB(sqlite3.Connection):
             raise TypeError(msg)
 
         if failed:
-            query = f'select fails from queue where id == {id}'  #nosec B608
+            query = f'select fails from queue where id == {id}'  # nosec B608
             self._c.execute(query)
             fails = int(self._c.fetchone()[0])
             self._c.execute('update queue set fails = ? where id == ?', (fails + 1, id))
@@ -244,7 +244,7 @@ class pDB(sqlite3.Connection):
             Union[int,None]: highest id or None if table is empty
         """
 
-        self._c.execute(f'SELECT MAX(id) FROM {table}')  #nosec B608
+        self._c.execute(f'SELECT MAX(id) FROM {table}')  # nosec B608
         # TODO check what is returned if table is empty
         try:
             reply = self._c.fetchone()
@@ -288,7 +288,7 @@ class pDB(sqlite3.Connection):
         Returns:
             dict: standard measurement dictionary with all required items
         """
-        assert type(meas_dict) == dict  #nosecB101
+        assert type(meas_dict) == dict  # nosecB101
         stored_values = defs.MEASUREMENTS_STORED
         rtn_dict = {}
 
