@@ -2,7 +2,17 @@
 Panthyr DB example code
 ===============================
 
-Example code:
+Example code generating an empty db:
+
+.. code:: python
+
+    >>> from panthyr_db.p_table_creator import pTableCreator
+    # Create empty db
+    >>> db = pTableCreator(db_file = './new_empty.db', tables = ('all',),
+                        owner = ('hypermaq', 'hypermaq'))
+
+
+Example code interacting with a db:
 
 .. code:: python
 
