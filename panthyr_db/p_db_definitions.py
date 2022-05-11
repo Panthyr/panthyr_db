@@ -40,8 +40,10 @@ PROTOCOL_TABLE = (
 
 LOGS_TABLE = (
     'id integer primary key autoincrement',
-    'timestamp date default (datetime(\'now\', \'utc\'))', 'level text collate nocase',
-    'source text not null collate nocase', 'log text default null collate nocase',
+    "timestamp date default (STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW'))",
+    'level text collate nocase',
+    'source text not null collate nocase',
+    'log text default null collate nocase',
 )
 
 SETTINGS_TABLE = ('setting text primary key not null collate nocase', 'value text collate nocase')
