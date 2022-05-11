@@ -7,7 +7,7 @@ Example code:
 .. code:: python
 
     >>> from panthyr_db.p_db import pDB
-    >>> db = p_db.pDB('./example.db')
+    >>> db = pDB('./example.db')
 
     # Settings
     #
