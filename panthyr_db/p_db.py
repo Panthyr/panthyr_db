@@ -84,16 +84,22 @@ class pDB(sqlite3.Connection):
         )
         self._commit_db()
 
-    def get_next_task(self) -> Union[None, tuple]:
+    def get_next_task(self, only_high_priority: bool = False) -> Union[None, tuple]:
         """Checks the db for tasks.
 
         Queries the "queue" table in the database_location db for tasks where done = "0".
-        Db is first queried for tasks with priority "1", then priority "2".
-        Sorting is done by id (thus order of creation).
+        Db is first queried for tasks with priority "1". If no tasks with high priority are found,
+        and if only_high_priority is False, then priority "2" tasks are queried.
+
+        Sorting is done by priority and then id (thus order of creation).
         Returns the next job (if any) as a tuple (id, priority, action, options, fails).
 
         Priority col values: 1 = high priority (manually queued, ...), 2 = normal priority
         Done col values: 1 = done, 0 = to be done
+
+        Args:
+            only_high_priority (bool, optional): only return tasks with priority 1.
+                                                Defaults to False.
 
         Returns:
             Union[None, tuple]: a tuple if a task was returned, None if not.
@@ -111,10 +117,11 @@ class pDB(sqlite3.Connection):
         if type(reply) == tuple:
             return reply
 
-        # No tasks with priority 1
-        self._c.execute(cmd_template.format(priority=2))
-        reply = self._c.fetchone()
-        return reply if type(reply) == tuple else None
+        if not only_high_priority:
+            # No tasks with priority 1
+            self._c.execute(cmd_template.format(priority=2))
+            reply = self._c.fetchone()
+            return reply if type(reply) == tuple else None
 
     def set_task_handled(self, id: int, failed: bool = False):
         """Marks a task in the queue table as done (or adds to the fail counter).

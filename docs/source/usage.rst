@@ -36,10 +36,9 @@ Example code interacting with a db:
     (28489, 1, 'measure', 'test', 0)
     # Oh no, task failed the first time
     >>> db.set_task_handled(28489, failed = True)
-    >>> db.get_next_task()
-    # Failed counter has incremented
+    >>> db.get_next_task(only_high_priority = True)
     (28489, 1, 'measure', 'test', 1)
-    # Now the task finished succesfully
+    # Failed counter has incremented
     >>> db.set_task_handled(28489, failed = False)
     >>> db.get_next_task()
     # No task returned, all done.
