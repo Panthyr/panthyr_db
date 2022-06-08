@@ -141,7 +141,7 @@ class pDB(sqlite3.Connection):
 
         cmd = 'select count() from queue where done == 0 and fails < 3'
         if only_high_priority:
-            cmd += 'and priority == 1'
+            cmd += ' and priority == 1'
 
         self._c.execute(cmd)
         reply = self._c.fetchone()[1]  # fetchone returns a tuple ()
