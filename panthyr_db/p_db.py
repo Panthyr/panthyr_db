@@ -102,7 +102,8 @@ class pDB(sqlite3.Connection):
                                                 Defaults to False.
 
         Returns:
-            Union[None, tuple]: a tuple if a task was returned, None if not.
+            Union[None, tuple]: a tuple (id, priority, action, options, fails) if
+                                a task was returned, None if not.
         """
 
         cmd_template = (
@@ -122,6 +123,30 @@ class pDB(sqlite3.Connection):
             self._c.execute(cmd_template.format(priority=2))
             reply = self._c.fetchone()
             return reply if type(reply) == tuple else None
+
+    def get_number_of_tasks(self, only_high_priority: bool = False) -> int:
+        """Checks the db for tasks and returns how many are to be done.
+
+        Queries the 'queue' table in the database_location db for the number of tasks where
+            done = '0' and fails < '3'.
+        If only_high_priority is True, only queries for tasks with priority 1.
+
+        Args:
+            only_high_priority (bool, optional): only return number of tasks with priority 1.
+                                                Defaults to False.
+
+        Returns:
+            int: number of undone tasks
+        """
+
+        cmd = 'select count() from queue where done == 0 and fails < 3'
+        if only_high_priority:
+            cmd += 'and priority == 1'
+
+        self._c.execute(cmd)
+        reply = self._c.fetchone()[1]  # fetchone returns a tuple ()
+
+        return int(reply)
 
     def set_task_handled(self, id: int, failed: bool = False):
         """Marks a task in the queue table as done (or adds to the fail counter).

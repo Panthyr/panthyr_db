@@ -32,6 +32,8 @@ Example code interacting with a db:
     #
     # add a task to the queue
     >>> db.add_to_queue('measure', 1, 'test')
+    >>> db.get_number_of_tasks()
+    1
     >>> db.get_next_task()
     (28489, 1, 'measure', 'test', 0)
     # Oh no, task failed the first time
