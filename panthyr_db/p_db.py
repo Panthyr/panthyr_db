@@ -145,7 +145,7 @@ class pDB(sqlite3.Connection):
 
         self._c.execute(cmd)
         try:
-            reply = self._c.fetchone()[1]  # fetchone returns a tuple ()
+            reply = self._c.fetchone()[0]  # fetchone returns a tuple ()
         except IndexError:
             reply = 0
 
