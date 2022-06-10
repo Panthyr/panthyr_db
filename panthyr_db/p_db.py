@@ -199,7 +199,7 @@ class pDB(sqlite3.Connection):
 
         except TypeError:
             err_str = f'Error while getting setting for {setting}, is setting in db?'
-            self.log.exception(err_str)
+            self.log.warning(err_str)
             return None
 
         try:  # check if the value is an integer, if so return it as int
