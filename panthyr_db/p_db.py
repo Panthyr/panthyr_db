@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # Authors: Dieter Vansteenwegen
 # Institution: VLIZ (Vlaams Instituut voor de Zee)
+import contextlib
 
 __author__ = 'Dieter Vansteenwegen'
 __email__ = 'dieter.vansteenwegen@vliz.be'
@@ -181,7 +182,7 @@ class pDB(sqlite3.Connection):
             self._c.execute("update queue set done = '1' where id == ?", (id,))
         self._commit_db()
 
-    def get_setting(self, setting: str) -> Union[str, int, None]:
+    def get_setting(self, setting: str) -> Union[str, int, float, None]:
         """Return the value of a setting in the 'settings' table.
 
         Args:
@@ -202,10 +203,11 @@ class pDB(sqlite3.Connection):
             self.log.warning(err_str)
             return None
 
-        try:  # check if the value is an integer, if so return it as int
-            return int(reply)
-        except (TypeError, ValueError):
-            return reply
+        with contextlib.suppress(TypeError, ValueError):
+            reply = int(reply)
+        with contextlib.suppress(TypeError, ValueError):
+            reply = float(reply)
+        return reply
 
     def set_setting(self, setting: str, value: str):
         """Adds or changes settings in the the 'settings' table.
