@@ -127,4 +127,8 @@ DEFAULT_SETTINGS = (
     ('id_last_backup_meas', 0),
     ('id_last_backup_log', 0),
     ('system_set_up', 0),
+    ('tty_irradiance', '/dev/ttyO1'),
+    ('tty_radiance', '/dev/ttyO2'),
+    ('tty_multiplexer', '/dev/ttyO4'),
+    ('tty_gnss', '/dev/ttyO5'),
 )
