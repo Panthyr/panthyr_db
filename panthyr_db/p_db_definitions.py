@@ -129,6 +129,6 @@ DEFAULT_SETTINGS = (
     ('system_set_up', 0),
     ('tty_irradiance', '/dev/ttyO1'),
     ('tty_radiance', '/dev/ttyO2'),
-    ('tty_multiplexer', '/dev/ttyO4'),
-    ('tty_gnss', '/dev/ttyO5'),
+    ('tty_multiplexer', '/dev/ttyO5'),
+    ('tty_gnss', '/dev/ttyO4'),
 )
