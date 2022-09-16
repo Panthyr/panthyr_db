@@ -363,7 +363,7 @@ class pDB(sqlite3.Connection):
         placeholders = ''
         values = []
         for i in meas_dict_clean:  # sourcery skip: replace-dict-items-with-values, use-dict-items
-            columns += 'f{i}, '
+            columns += f'{i}, '
             placeholders += '?, '
             values.append(meas_dict_clean[i])
 
