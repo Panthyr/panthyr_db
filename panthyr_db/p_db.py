@@ -388,7 +388,7 @@ class pDB(sqlite3.Connection):
         if not table_ids:
             self.log.warning('no tables have been specified')
             return
-        if any(type(i) != tuple for i in table_ids):
+        if any(type(i) not in (tuple, list) for i in table_ids):
             self.log.error('Invalid argument passed for table_ids: should be a tuple of tuples')
             return
         self._create_export_target(target_db=target_db, table_ids=table_ids)
