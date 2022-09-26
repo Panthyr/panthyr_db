@@ -203,10 +203,11 @@ class pDB(sqlite3.Connection):
             self.log.warning(err_str)
             return None
 
-        with contextlib.suppress(TypeError, ValueError):
+        try:
             reply = int(reply)
-        with contextlib.suppress(TypeError, ValueError):
-            reply = float(reply)
+        except ValueError:
+            with contextlib.suppress(TypeError, ValueError):
+                reply = float(reply)
         return reply
 
     def set_setting(self, setting: str, value: str):
