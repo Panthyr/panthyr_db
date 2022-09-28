@@ -85,7 +85,14 @@ class pTableCreator():
             makedirs(dir_name)
         self.db = Connection(self.db_file)
         self._create_tables()
+        self._create_view()
         self.db.commit()
+
+    def _create_view(self) -> None:
+        self.db.execute(
+            'CREATE VIEW "Possible Issues" AS select * from logs '
+            'where "level" NOT IN ("INFO", "DEBUG")',
+        )
 
     def _create_tables(self):
         """Create the tables in the database, if requested."""
