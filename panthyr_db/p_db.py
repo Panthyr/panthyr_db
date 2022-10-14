@@ -53,6 +53,7 @@ class pDB(sqlite3.Connection):
         super(pDB, self).__init__(database=database, **kwargs)
         self._c = self.cursor()  # cursor object
         self.log = initialize_logger()
+        self.db_location = database
 
     def _commit_db(self):
         self.commit()
