@@ -16,7 +16,7 @@ import logging
 from panthyr_db.p_table_creator import pTableCreator
 from . import p_db_definitions as defs
 
-CREDENTIALS_FILE: str = '/home/hypermaq/data/credentials'
+CREDENTIALS_FILE: str = '/home/panthyr/data/credentials'
 DEFAULT_CREDENTIALS: tuple = (
     'email_user',
     'email_password',

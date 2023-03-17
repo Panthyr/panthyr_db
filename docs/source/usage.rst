@@ -9,7 +9,7 @@ Example code generating an empty db:
     >>> from panthyr_db.p_table_creator import pTableCreator
     # Create empty db
     >>> db = pTableCreator(db_file = './new_empty.db', tables = ('all',),
-                        owner = ('hypermaq', 'hypermaq'))
+                        owner = ('panthyr', 'panthyr'))
 
 
 Example code interacting with a db:
