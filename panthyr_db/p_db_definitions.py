@@ -101,7 +101,7 @@ DEFAULT_SETTINGS = (
     ('ftp_server', ''),
     ('ftp_user', ''),
     ('ftp_password', ''),
-    ('ftp_working_dir', 'hypermaq'),
+    ('ftp_working_dir', '.'),
     (
         'head_true_north_offset',
         180,
