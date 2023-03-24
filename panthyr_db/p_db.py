@@ -284,7 +284,6 @@ class pDB(sqlite3.Connection):
         """
 
         self._c.execute(f'SELECT MAX(id) FROM {table}')  # nosec B608
-        # TODO check what is returned if table is empty
         try:
             reply = self._c.fetchone()
         except sqlite3.OperationalError:
@@ -466,7 +465,7 @@ class pDB(sqlite3.Connection):
             substitution = []
             cmd += ' WHERE id '
             if start and stop:
-                if not start < stop:
+                if not start <= stop:
                     self.log.warning(
                         f'trying to export {table}, but end id {stop} '
                         f'is not lower than start_id ({start}). '
@@ -490,8 +489,16 @@ class pDB(sqlite3.Connection):
 
     def populate_credentials(
         self,
-        credentials_file: str = CREDENTIALS_FILE,
-        credentials: tuple = DEFAULT_CREDENTIALS,
-    ):
-        # TODO
-        pass
+        credentials: dict,
+    ) -> None:
+        """Populate the credentials in the settings table.
+
+        Gets credentials listed in  DEFAULT_CREDENTIALS from given dict
+            and updates the table values.
+
+        Args:
+            credentials (dict): dict with credentials
+        """
+        if credentials:
+            for credential in DEFAULT_CREDENTIALS:
+                self.set_setting(credential, credentials.get(credential, ''))
