@@ -8,7 +8,7 @@ Example code generating an empty db:
 
     >>> from panthyr_db.p_table_creator import pTableCreator
     # Create empty db
-    >>> db = pTableCreator(db_file = './new_empty.db', tables = ('all',),
+    >>> db = pTableCreator(db_file = '/home/panthyr/data/panthyr.db', tables = ('all',),
                         owner = ('panthyr', 'panthyr'))
 
 
