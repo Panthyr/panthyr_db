@@ -131,4 +131,5 @@ DEFAULT_SETTINGS = (
     ('tty_radiance', '/dev/ttyO2'),
     ('tty_multiplexer', '/dev/ttyO5'),
     ('tty_gnss', '/dev/ttyO4'),
+    ('adc_channel', ''),
 )
