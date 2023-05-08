@@ -4,6 +4,14 @@ panthyr\_db package
 Submodules
 ----------
 
+panthyr\_db.old module
+----------------------
+
+.. automodule:: panthyr_db.old
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 panthyr\_db.p\_db module
 ------------------------
 
