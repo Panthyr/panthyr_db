@@ -8,18 +8,18 @@ __email__ = 'dieter.vansteenwegen@vliz.be'
 __project__ = 'Panthyr'
 __project_link__ = 'https://waterhypernet.org/equipment/'
 
-from typing import Union
-from sqlite3 import Connection
-from . import p_db_definitions as defs
-from os import path
 import logging
+import pathlib
 import sys
+from sqlite3 import Connection
+from typing import Union
+
+from . import p_db_definitions as defs
 
 VALID_TABLES = ('protocol', 'settings', 'measurements', 'queue', 'logs')
 
 
-class pTableCreator():
-
+class pTableCreator:  # noqa: N801
     def __init__(
         self,
         db_file: str = defs.DATABASE_LOCATION,
@@ -58,9 +58,10 @@ class pTableCreator():
     def _check_if_file_exists(self):
         """Check if the file exists. Exit if it does."""
 
-        if path.isfile(self.db_file):
+        if pathlib.Path(self.db_file).is_file:
             self.log.error(
-                f'The file {self.db_file} exists on disk. Not doing anything.\n Quitting now...', )
+                f'The file {self.db_file} exists on disk. Not doing anything.\n Quitting now...',
+            )
             sys.exit()
 
     def _check_table_list(self, tables: tuple):
@@ -74,15 +75,14 @@ class pTableCreator():
         """
         for t in tables:
             if t != 'all' and t not in VALID_TABLES:
-                err_msg = f'{t} is not a valid table name. Valid: \'all\' or {VALID_TABLES}'
-                raise Exception(err_msg)
+                err_msg = f"{t} is not a valid table name. Valid: 'all' or {VALID_TABLES}"
+                raise Exception(err_msg)  # noqa: TRY002
 
     def _create_db(self):
         """Create the database on disk."""
-        dir_name = path.dirname(self.db_file)
-        if not path.isdir(dir_name):
-            from os import makedirs
-            makedirs(dir_name)
+        dir_name = pathlib.Path(self.db_file).parent
+        if not dir_name.isdir:
+            dir_name.mkdir(parents=True)
         self.db = Connection(self.db_file)
         self._create_tables()
         self._create_view()
@@ -190,16 +190,17 @@ class pTableCreator():
             owner (tuple): tuple containing (owner, group)
         """
 
-        import pwd
         import grp
         import os
+        import pwd
 
         try:
             uid = pwd.getpwnam(owner[0]).pw_uid
             gid = grp.getgrnam(owner[1]).gr_gid
         except KeyError:
             self.log.exception(
-                f'Could not get uid/gid for {owner[0]}/{owner[1]}. Not setting uid/gid.', )
+                f'Could not get uid/gid for {owner[0]}/{owner[1]}. Not setting uid/gid.',
+            )
             raise
         try:
             os.chown(self.db_file, uid, gid)  # noqa
