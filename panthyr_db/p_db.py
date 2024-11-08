@@ -9,11 +9,12 @@ __email__ = 'dieter.vansteenwegen@vliz.be'
 __project__ = 'Panthyr'
 __project_link__ = 'https://waterhypernet.org/equipment/'
 
-from typing import List, Optional, Tuple, Union
-import sqlite3  # Because ... Well...
 import logging
+import sqlite3  # Because ... Well...
+from typing import List, Optional, Tuple, Union
 
 from panthyr_db.p_table_creator import pTableCreator
+
 from . import p_db_definitions as defs
 
 CREDENTIALS_FILE: str = '/home/panthyr/data/credentials'
@@ -39,8 +40,7 @@ def initialize_logger() -> logging.Logger:
         return logging.getLogger('__main__.{}'.format(__name__))
 
 
-class pDB(sqlite3.Connection):
-
+class pDB(sqlite3.Connection):  # noqa: N801
     def __init__(self, database: str = defs.DATABASE_LOCATION, **kwargs):
         """_summary_
 
@@ -153,7 +153,7 @@ class pDB(sqlite3.Connection):
 
         return int(reply)
 
-    def set_task_handled(self, id: int, failed: bool = False):
+    def set_task_handled(self, task_id: int, failed: bool = False):
         """Marks a task in the queue table as done (or adds to the fail counter).
 
         Takes the task id as argument.
@@ -169,18 +169,18 @@ class pDB(sqlite3.Connection):
             TypeError: if one of the arguments is of an incorrect type.
         """
 
-        if type(id) != int or id < 0:  # check if a valid id is passed
-            msg = f'No valid queue ID provided ({id})'
+        if not isinstance(task_id, int) or task_id < 0:  # check if a valid id is passed
+            msg = f'No valid queue ID provided ({task_id})'
             self.log.warning(msg)
             raise TypeError(msg)
 
         if failed:
-            query = f'select fails from queue where id == {id}'  # nosec B608
+            query = f'select fails from queue where id == {task_id}'  # noqa: S608
             self._c.execute(query)
             fails = int(self._c.fetchone()[0])
-            self._c.execute('update queue set fails = ? where id == ?', (fails + 1, id))
+            self._c.execute('update queue set fails = ? where id == ?', (fails + 1, task_id))
         else:
-            self._c.execute("update queue set done = '1' where id == ?", (id,))
+            self._c.execute("update queue set done = '1' where id == ?", (task_id,))
         self._commit_db()
 
     def get_setting(self, setting: str) -> Union[str, int, float, None]:
@@ -256,7 +256,8 @@ class pDB(sqlite3.Connection):
                 'azimuth': s[2],
                 'repeat': s[3],
                 'wait': s[4],
-            } for i, s in enumerate(response, start=1)
+            }
+            for i, s in enumerate(response, start=1)
         ]
 
     def add_log(self, logtext: str, source: str = 'none', level: str = 'info'):
@@ -283,7 +284,7 @@ class pDB(sqlite3.Connection):
             Union[int,None]: highest id or None if table is empty
         """
 
-        self._c.execute(f'SELECT MAX(id) FROM {table}')  # nosec B608
+        self._c.execute(f'SELECT MAX(id) FROM {table}')  # noqa: S608
         try:
             reply = self._c.fetchone()
         except sqlite3.OperationalError:
@@ -326,7 +327,6 @@ class pDB(sqlite3.Connection):
         Returns:
             dict: standard measurement dictionary with all required items
         """
-        assert type(meas_dict) == dict  # nosecB101
         stored_values = defs.MEASUREMENTS_STORED
         rtn_dict = {}
 
@@ -368,7 +368,7 @@ class pDB(sqlite3.Connection):
             placeholders += '?, '
             values.append(meas_dict_clean[i])
 
-        cmd = f'insert into measurements({columns[:-2]}) values ({placeholders[:-2]})'
+        cmd = f'insert into measurements({columns[:-2]}) values ({placeholders[:-2]})'  # noqa: S608
 
         return (cmd, values)
 
@@ -431,7 +431,7 @@ class pDB(sqlite3.Connection):
         for table in table_ids:
             cmd = self._generate_export_cmd(table)
             if cmd:
-                if type(cmd) == str:
+                if isinstance(cmd, str):
                     self.execute(cmd)
                 else:
                     self.execute(cmd[0], cmd[1])
@@ -459,7 +459,7 @@ class pDB(sqlite3.Connection):
         start = table[1] if len(table) > 1 else None
         stop = table[2] if len(table) > 2 else None
 
-        cmd = f'INSERT INTO target_db.{table_name} SELECT * FROM {table_name}'  #nosecB608
+        cmd = f'INSERT INTO target_db.{table_name} SELECT * FROM {table_name}'  # noqa: S608
 
         if start or stop:  # not all ids need to be exported
             substitution = []
@@ -469,7 +469,8 @@ class pDB(sqlite3.Connection):
                     self.log.warning(
                         f'trying to export {table}, but end id {stop} '
                         f'is not lower than start_id ({start}). '
-                        f'Skipping this table', )
+                        f'Skipping this table',
+                    )
                     return None
                 cmd += 'BETWEEN ? AND ?'
                 substitution += [start - 1, stop]

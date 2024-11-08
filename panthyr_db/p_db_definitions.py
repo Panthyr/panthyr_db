@@ -31,8 +31,8 @@ MEASUREMENTS_STORED = (
 
 MEASUREMENTS_TABLE = (
     'id integer primary key autoincrement',
-    'timestamp date default (datetime(\'now\', \'utc\'))',
-    'valid text default \'n\' collate nocase',
+    "timestamp date default (datetime('now', 'utc'))",
+    "valid text default 'n' collate nocase",
     'setup_error text collate nocase',
     'cycle_id text',
     'gnss_acquired date',
@@ -61,7 +61,7 @@ QUEUE_TABLE = (
     'done integer not null default 0 collate nocase',
     'priority integer not null default 2',
     'fails integer NOT NULL DEFAULT 0',
-    'timestamp date default (datetime(\'now\', \'utc\'))',
+    "timestamp date default (datetime('now', 'utc'))",
     'action text not null collate nocase',
     'options text default null collate nocase',
 )
