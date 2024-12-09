@@ -1,6 +1,6 @@
 # Changelog
 
-## Not yet released
+## v1.1.0 (09/12/2024)
 
-- fix: fix check for existing db file
-
+- fix: Fix check for existing db file
+- feat: Store vitals in measurement table

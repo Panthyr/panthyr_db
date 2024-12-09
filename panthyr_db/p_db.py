@@ -116,15 +116,14 @@ class pDB(sqlite3.Connection):  # noqa: N801
         # try to get task with priority 1
         self._c.execute(cmd_template.format(priority=1))
         reply = self._c.fetchone()
-
-        if type(reply) == tuple:
+        if isinstance(reply, tuple):
             return reply
 
         if not only_high_priority:
             # No tasks with priority 1
             self._c.execute(cmd_template.format(priority=2))
             reply = self._c.fetchone()
-            return reply if type(reply) == tuple else None
+            return reply if isinstance(reply, tuple) else None
 
     def get_number_of_tasks(self, only_high_priority: bool = False) -> int:
         """Checks the db for tasks and returns how many are to be done.
