@@ -58,7 +58,7 @@ class pTableCreator:  # noqa: N801
     def _check_if_file_exists(self):
         """Check if the file exists. Exit if it does."""
 
-        if pathlib.Path(self.db_file).is_file:
+        if pathlib.Path(self.db_file).is_file():
             self.log.error(
                 f'The file {self.db_file} exists on disk. Not doing anything.\n Quitting now...',
             )
@@ -81,7 +81,7 @@ class pTableCreator:  # noqa: N801
     def _create_db(self):
         """Create the database on disk."""
         dir_name = pathlib.Path(self.db_file).parent
-        if not dir_name.isdir:
+        if not dir_name.is_dir():
             dir_name.mkdir(parents=True)
         self.db = Connection(self.db_file)
         self._create_tables()
