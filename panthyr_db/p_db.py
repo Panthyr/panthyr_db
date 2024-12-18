@@ -446,6 +446,11 @@ class pDB(sqlite3.Connection):  # noqa: N801
         If start id is given, export starting at that id
         If stop id is given, export until that id -1
 
+        Since the column order of the measurments table has changed (commit 5b82669),
+        simply copying the data from the main database to the backup results in
+        mismapped columns. To work around this, explicityly query the columns in the correct order
+        when making a backup of the measurements table.
+
         Args:
             table (Tuple[str, Optional[int], Optional[int]]): table name, start id, stop id
 
@@ -459,6 +464,12 @@ class pDB(sqlite3.Connection):  # noqa: N801
         stop = table[2] if len(table) > 2 else None
 
         cmd = f'INSERT INTO target_db.{table_name} SELECT * FROM {table_name}'  # noqa: S608
+        if table_name == 'measurements':
+            cols_measurement = [f'val_{x:03.0f}' for x in range(1, 257)]
+            cols_metadata = [x.split()[0] for x in defs.MEASUREMENTS_TABLE]
+
+            tables_input: str = ','.join(cols_metadata + cols_measurement)
+            cmd = cmd.replace('*', f'{tables_input}')
 
         if start or stop:  # not all ids need to be exported
             substitution = []
