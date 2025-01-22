@@ -3,7 +3,7 @@
 [project]
 name = 'p_db'
 readme = 'README.md'
-version = 'v1.1.0'
+version = 'v1.1.1'
 description = 'Database for Panthyr'
 authors = [{ email = 'dieterv@vliz.be' }, { name = 'Dieter Vansteenwegen' }]
 classifiers = [
@@ -11,10 +11,8 @@ classifiers = [
     'Programming Language :: Python',
 ]
 requires-python = ">=3.7.3"
-dynamic = ["dependencies"]
+dependencies = []
 
-[tool.setuptools.dynamic]
-dependencies = { file = ["requirements.txt"] }
 
 [project.urls]
 Homepage = 'https://waterhypernet.org/equipment/'
@@ -24,11 +22,7 @@ Changelog = 'https://github.com/panthyr/panthyr_db/blob/master/CHANGELOG.md'
 
 [build-system]
 requires = ['setuptools', 'setuptools-scm']
-# build-backend = 'setuptools.build.meta'     # Generates 'ModuleNotFoundError: No module named 'setuptools.build'
-
-# [tool.setuptools.packages.find]
-# where = ['src']   # list of folders that contain the packages (['.'] by default)
-# include = ['XXX']
+build-backend = 'setuptools.build_meta'
 
 
 [tool.bandit]

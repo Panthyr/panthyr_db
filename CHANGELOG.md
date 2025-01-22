@@ -1,6 +1,6 @@
 # Changelog
 
-## Not yet released
+## v1.1.1 (22/01/2025)
 
 - fix: Map columns correctly when exporting database
 
