@@ -221,24 +221,14 @@ class pDBExporter(pDB):  # noqa: N801
 
     def _get_range_for_date(self, date: dt, table: str) -> DataRange:
         """Get the range of IDs for a specific date and table."""
-        valid_tables = {'logs', 'measurements'}
-        if table not in valid_tables:
-            msg = f'Invalid table name: {table}. Must be one of {valid_tables}'
-            raise ValueError(msg)
 
         try:
             if table == 'measurements':
-                if not self._total_meas_range:
-                    msg = f'No measurement range available for date {date.strftime("%Y-%m-%d")}'
-                    raise EmptyDataRangeError(msg)
                 self._c.execute(
                     'SELECT MIN(id), MAX(id) FROM measurements WHERE id >= ? AND DATE(timestamp) = ?',
                     (self._total_meas_range.first_id_to_handle, date.strftime('%Y-%m-%d')),
                 )
             elif table == 'logs':
-                if not self._total_logs_range:
-                    msg = f'No logs range available for date {date.strftime("%Y-%m-%d")}'
-                    raise EmptyDataRangeError(msg)
                 self._c.execute(
                     'SELECT MIN(id), MAX(id) FROM logs WHERE id >= ? AND DATE(timestamp) = ?',
                     (self._total_logs_range.first_id_to_handle, date.strftime('%Y-%m-%d')),
@@ -253,6 +243,6 @@ class pDBExporter(pDB):  # noqa: N801
 
         except Exception as e:
             if isinstance(e, (EmptyDataRangeError, ValueError)):
-                raise
+                return None
             msg = f'Database error getting range for {table} on {date}: {e}'
             raise DatabaseError(msg) from e
