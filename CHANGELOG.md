@@ -3,7 +3,7 @@
 ## Not yet released
 
 - fix: Fix logger naming
-
+- feat: Add upload in chuncks feature
 
 ## v1.1.1 (22/01/2025)
 

@@ -1,0 +1,257 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+# Authors: Dieter Vansteenwegen
+# Institution: VLIZ (Vlaams Instituut voor de Zee)
+
+# ruff: noqa: DTZ001, DTZ007
+
+
+import logging
+import pathlib
+from dataclasses import dataclass
+from datetime import datetime as dt
+from datetime import timezone as tz
+from typing import List, Union
+
+from .p_db import pDB
+
+
+class NoNewDataError(Exception):
+    """Raised when no new data is available for export."""
+
+    def __init__(self, message: str = 'No new data available for export'):
+        super().__init__(message)
+
+
+class EmptyDataRangeError(Exception):
+    """Raised when a data range is empty."""
+
+    def __init__(self, message: str = 'Data range is empty'):
+        super().__init__(message)
+
+
+class DatabaseError(Exception):
+    """Raised when database operations fail."""
+
+    def __init__(self, message: str = 'Database operation failed'):
+        super().__init__(message)
+
+
+@dataclass
+class NextUploadData:
+    last_log_id: Union[int, None]
+    last_meas_id: Union[int, None]
+    date: dt
+    db_path: str
+
+    def __str__(self) -> str:
+        return (
+            f'NextUploadData for {dt.strftime(self.date, "%Y-%m-%d")}'
+            f'last_meas_id={self.last_meas_id}, last_log_id={self.last_log_id}, '
+            f'stored at {self.db_path}'
+        )
+
+
+@dataclass
+class DataRange:
+    first_id_to_handle: int
+    last_id_to_handle: int
+
+    def __post_init__(self):
+        """Validate the data range after initialization."""
+        if self.first_id_to_handle > self.last_id_to_handle:
+            msg = f'First_id_to_handle  ({self.first_id_to_handle}) cannot be greater than '
+            f'last_id_to_handle ({self.last_id_to_handle})'
+            raise ValueError(msg)
+
+    def set_new_first_id(self, new_first_id: int) -> None:
+        """Update the first ID to handle."""
+        self.first_id_to_handle = new_first_id
+
+    @property
+    def count(self) -> int:
+        """Return the number of records in this range."""
+        return self.last_id_to_handle - self.first_id_to_handle + 1
+
+
+LOG_BUFFER_SIZE = 10
+
+log = logging.getLogger(__name__)
+
+"""
+* Pass last uploaded log and measurement IDs to the constructor.
+* check if there is new data to upload/backup, keep a range to upload
+    * If there is no new data to upload, raise NoNewDataError
+* If there is new data, check the date of the oldest log or measurement that needs to be uploaded
+* Generate a list of log and measurement id ranges to upload (for that date)
+* Create a db with those logs and measurements in the tempfile dir
+* Create a NextUploadData instance (with last id's of in that db and the path)
+* Return the path as well as the last log and measurement IDs
+"""
+
+
+def dt_from_sql_str(date_str: str) -> dt:
+    """Convert a date string from the database to a datetime object."""
+    # Only use the first 10 characters to avoid "unconverted data remains" errors
+    return dt.strptime(date_str[:10], '%Y-%m-%d')
+
+
+class pDBExporter(pDB):  # noqa: N801
+    """Class to export new data from the Panthyr database."""
+
+    def __init__(
+        self,
+        src_db_location: str,
+        tempdir: str,
+    ) -> None:
+        super().__init__(database=src_db_location)
+
+        # Validate and create temp directory
+        temp_path = pathlib.Path(tempdir)
+        if not temp_path.exists():
+            temp_path.mkdir(parents=True, exist_ok=True)
+        elif not temp_path.is_dir():
+            msg = f'Tempdir path exists but is not a directory: {tempdir}'
+            raise ValueError(msg)
+
+        self._tempdir = temp_path
+        log.debug(f'Using temporary directory {self._tempdir}')
+
+    def get_next_data_to_upload(self) -> NextUploadData:
+        """Get the next day to upload."""
+        date_to_upload = self._get_oldest_date()
+        meas_range = (
+            self._get_range_for_date(date_to_upload, 'measurements')
+            if self._total_meas_range
+            else None
+        )
+        logs_range = (
+            self._get_range_for_date(date_to_upload, 'logs') if self._total_logs_range else None
+        )
+        log.debug(f'Generating export for {date_to_upload}, meas: {meas_range}, logs: {logs_range}')
+        db = self._create_db(date_to_upload, meas_range, logs_range)
+        rtn = NextUploadData(
+            last_log_id=logs_range.last_id_to_handle if logs_range else None,
+            last_meas_id=meas_range.last_id_to_handle if meas_range else None,
+            date=date_to_upload,
+            db_path=str(db),
+        )
+        log.debug(f'Returning to upload: {rtn}')
+        return rtn
+
+    def _create_db(self, date_to_upload, meas_range, logs_range) -> pathlib.Path:
+        fn = self._create_fn(date_to_upload, meas_range, logs_range)
+        table_ids = []
+        if meas_range:
+            table_ids.append(
+                ('measurements', meas_range.first_id_to_handle, meas_range.last_id_to_handle),
+            )
+        if logs_range:
+            table_ids.append(('logs', logs_range.first_id_to_handle, logs_range.last_id_to_handle))
+        self.export_data(target_db=str(fn), table_ids=tuple(table_ids))
+        return fn
+
+    def _create_fn(
+        self, date: dt, meas_range: Union[DataRange, None], logs_range: Union[DataRange, None]
+    ) -> pathlib.Path:
+        station_id = self.get_setting('station_id')
+        now = dt.now(tz=tz.utc).strftime('%Y%m%d_%H%M%S')
+        data = ''
+        if meas_range:
+            data += f'_meas_{meas_range.first_id_to_handle}-{meas_range.last_id_to_handle}'
+        if logs_range:
+            data += f'_logs_{logs_range.first_id_to_handle}-{logs_range.last_id_to_handle}'
+        return pathlib.Path.joinpath(
+            self._tempdir, f'{station_id}_export_{now}{data}_from{dt.strftime(date, "%Y%m%d")}.db'
+        )
+
+    def _get_oldest_date(self) -> dt:
+        """Get the oldest date from available data ranges."""
+        dates: List[dt] = []
+
+        try:
+            if self._total_meas_range:
+                self._c.execute(
+                    'SELECT timestamp FROM measurements WHERE id >= ? ORDER BY id ASC LIMIT 1',
+                    (self._total_meas_range.first_id_to_handle,),
+                )
+                result = self._c.fetchone()
+                if result and result[0]:
+                    dates.append(dt_from_sql_str(result[0]))
+
+            if self._total_logs_range:
+                self._c.execute(
+                    'SELECT timestamp FROM logs WHERE id >= ? ORDER BY id ASC LIMIT 1',
+                    (self._total_logs_range.first_id_to_handle,),
+                )
+                result = self._c.fetchone()
+                if result and result[0]:
+                    dates.append(dt_from_sql_str(result[0]))
+
+        except Exception as e:
+            msg = f'Database error getting oldest date: {e}'
+            raise DatabaseError(msg) from e
+
+        if not dates:
+            raise NoNewDataError()
+
+        return min(dates)
+
+    @property
+    def _total_meas_range(self) -> Union[DataRange, None]:
+        first = int(self.get_setting('id_last_backup_meas'))  # type: ignore
+        last = self.get_last_id('measurements')
+        return (
+            None
+            if first == last
+            else DataRange(first_id_to_handle=first + 1, last_id_to_handle=last)  # type: ignore
+        )
+
+    @property
+    def _total_logs_range(self) -> Union[DataRange, None]:
+        first = int(self.get_setting('id_last_backup_logs'))  # type: ignore
+        # Keep recent logs in main DB
+        last = self.get_last_id('logs') - LOG_BUFFER_SIZE  # type: ignore
+        return (
+            None
+            if first >= last
+            else DataRange(first_id_to_handle=first + 1, last_id_to_handle=last)  # type: ignore
+        )
+
+    def _get_range_for_date(self, date: dt, table: str) -> DataRange:
+        """Get the range of IDs for a specific date and table."""
+        valid_tables = {'logs', 'measurements'}
+        if table not in valid_tables:
+            msg = f'Invalid table name: {table}. Must be one of {valid_tables}'
+            raise ValueError(msg)
+
+        try:
+            if table == 'measurements':
+                if not self._total_meas_range:
+                    msg = f'No measurement range available for date {date.strftime("%Y-%m-%d")}'
+                    raise EmptyDataRangeError(msg)
+                self._c.execute(
+                    'SELECT MIN(id), MAX(id) FROM measurements WHERE id >= ? AND DATE(timestamp) = ?',
+                    (self._total_meas_range.first_id_to_handle, date.strftime('%Y-%m-%d')),
+                )
+            elif table == 'logs':
+                if not self._total_logs_range:
+                    msg = f'No logs range available for date {date.strftime("%Y-%m-%d")}'
+                    raise EmptyDataRangeError(msg)
+                self._c.execute(
+                    'SELECT MIN(id), MAX(id) FROM logs WHERE id >= ? AND DATE(timestamp) = ?',
+                    (self._total_logs_range.first_id_to_handle, date.strftime('%Y-%m-%d')),
+                )
+
+            result = self._c.fetchone()
+            if not result or result[0] is None or result[1] is None:
+                msg = f'No {table} found for date {date.strftime("%Y-%m-%d")}'
+                raise EmptyDataRangeError(msg)
+
+            return DataRange(first_id_to_handle=result[0], last_id_to_handle=result[1])
+
+        except Exception as e:
+            if isinstance(e, (EmptyDataRangeError, ValueError)):
+                raise
+            msg = f'Database error getting range for {table} on {date}: {e}'
+            raise DatabaseError(msg) from e
