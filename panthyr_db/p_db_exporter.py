@@ -134,7 +134,7 @@ class pDBExporter(pDB):  # noqa: N801
             last_log_id=logs_range.last_id_to_handle if logs_range else None,
             last_meas_id=meas_range.last_id_to_handle if meas_range else None,
             date=date_to_upload,
-            db_path=str(db),
+            db_path=db,
         )
         log.debug(f'Returning to upload: {rtn}')
         return rtn
@@ -162,7 +162,8 @@ class pDBExporter(pDB):  # noqa: N801
         if logs_range:
             data += f'_logs_{logs_range.first_id_to_handle}-{logs_range.last_id_to_handle}'
         return pathlib.Path.joinpath(
-            self._tempdir, f'{station_id}_export_{now}{data}_from{dt.strftime(date, "%Y%m%d")}.db'
+            self._tempdir,
+            f'{station_id}_export_{now}{data}_from_{dt.strftime(date, "%Y%m%d")}.db',
         )
 
     def _get_oldest_date(self) -> dt:
@@ -209,7 +210,7 @@ class pDBExporter(pDB):  # noqa: N801
 
     @property
     def _total_logs_range(self) -> Union[DataRange, None]:
-        first = int(self.get_setting('id_last_backup_logs'))  # type: ignore
+        first = int(self.get_setting('id_last_backup_log'))  # type: ignore
         # Keep recent logs in main DB
         last = self.get_last_id('logs') - LOG_BUFFER_SIZE  # type: ignore
         return (
