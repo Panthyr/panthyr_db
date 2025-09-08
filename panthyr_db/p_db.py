@@ -34,10 +34,7 @@ def initialize_logger() -> logging.Logger:
     Returns:
         logging.Logger: logger instance
     """
-    if __name__ == '__main__':
-        return logging.getLogger('{}'.format(__name__))
-    else:
-        return logging.getLogger('__main__.{}'.format(__name__))
+    return logging.getLogger(__name__)
 
 
 class pDB(sqlite3.Connection):  # noqa: N801
