@@ -46,7 +46,7 @@ class NextUploadData:
 
     def __str__(self) -> str:
         return (
-            f'NextUploadData for {dt.strftime(self.date, "%Y-%m-%d")}'
+            f'NextUploadData for {dt.strftime(self.date, "%Y-%m-%d")} ->'
             f'last_meas_id={self.last_meas_id}, last_log_id={self.last_log_id}, '
             f'stored at {self.db_path}'
         )
@@ -60,8 +60,10 @@ class DataRange:
     def __post_init__(self):
         """Validate the data range after initialization."""
         if self.first_id_to_handle > self.last_id_to_handle:
-            msg = f'First_id_to_handle  ({self.first_id_to_handle}) cannot be greater than '
-            f'last_id_to_handle ({self.last_id_to_handle})'
+            msg = (
+                f'First_id_to_handle ({self.first_id_to_handle}) cannot be greater than '
+                f'last_id_to_handle ({self.last_id_to_handle})'
+            )
             raise ValueError(msg)
 
     def set_new_first_id(self, new_first_id: int) -> None:
@@ -129,12 +131,18 @@ class pDBExporter(pDB):  # noqa: N801
             self._get_range_for_date(date_to_upload, 'logs') if self._total_logs_range else None
         )
         log.debug(f'Generating export for {date_to_upload}, meas: {meas_range}, logs: {logs_range}')
+        if not meas_range and logs_range and logs_range.count < 10:
+            msg = (
+                f'No measurements and only {logs_range.count} logs to upload for date '
+                f'{date_to_upload.strftime("%Y-%m-%d")}'
+            )
+            raise NoNewDataError(msg)
         db = self._create_db(date_to_upload, meas_range, logs_range)
         rtn = NextUploadData(
             last_log_id=logs_range.last_id_to_handle if logs_range else None,
             last_meas_id=meas_range.last_id_to_handle if meas_range else None,
             date=date_to_upload,
-            db_path=db,
+            db_path=str(db),
         )
         log.debug(f'Returning to upload: {rtn}')
         return rtn
@@ -152,7 +160,10 @@ class pDBExporter(pDB):  # noqa: N801
         return fn
 
     def _create_fn(
-        self, date: dt, meas_range: Union[DataRange, None], logs_range: Union[DataRange, None]
+        self,
+        date: dt,
+        meas_range: Union[DataRange, None],
+        logs_range: Union[DataRange, None],
     ) -> pathlib.Path:
         station_id = self.get_setting('station_id')
         now = dt.now(tz=tz.utc).strftime('%Y%m%d_%H%M%S')
@@ -224,11 +235,18 @@ class pDBExporter(pDB):  # noqa: N801
 
         try:
             if table == 'measurements':
+                if not self._total_meas_range:
+                    msg = f'No measurement range available for date {date.strftime("%Y-%m-%d")}'
+                    raise EmptyDataRangeError(msg)
                 self._c.execute(
-                    'SELECT MIN(id), MAX(id) FROM measurements WHERE id >= ? AND DATE(timestamp) = ?',
+                    'SELECT MIN(id), MAX(id) FROM measurements '
+                    'WHERE id >= ? AND DATE(timestamp) = ?',
                     (self._total_meas_range.first_id_to_handle, date.strftime('%Y-%m-%d')),
                 )
             elif table == 'logs':
+                if not self._total_logs_range:
+                    msg = f'No logs range available for date {date.strftime("%Y-%m-%d")}'
+                    raise EmptyDataRangeError(msg)
                 self._c.execute(
                     'SELECT MIN(id), MAX(id) FROM logs WHERE id >= ? AND DATE(timestamp) = ?',
                     (self._total_logs_range.first_id_to_handle, date.strftime('%Y-%m-%d')),
@@ -243,6 +261,6 @@ class pDBExporter(pDB):  # noqa: N801
 
         except Exception as e:
             if isinstance(e, (EmptyDataRangeError, ValueError)):
-                return None
+                raise
             msg = f'Database error getting range for {table} on {date}: {e}'
             raise DatabaseError(msg) from e
