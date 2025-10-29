@@ -11,7 +11,6 @@ import pathlib
 from dataclasses import dataclass
 from datetime import datetime as dt
 from datetime import timezone as tz
-from math import e
 from typing import List, Union
 
 from .p_db import pDB
@@ -147,7 +146,7 @@ class pDBExporter(pDB):  # noqa: N801
             last_log_id=logs_range.last_id_to_handle if logs_range else None,
             last_meas_id=meas_range.last_id_to_handle if meas_range else None,
             date=date_to_upload,
-            db_path=str(db),
+            db_path=db,
         )
         return rtn
 
