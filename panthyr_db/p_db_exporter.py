@@ -11,6 +11,7 @@ import pathlib
 from dataclasses import dataclass
 from datetime import datetime as dt
 from datetime import timezone as tz
+from math import e
 from typing import List, Union
 
 from .p_db import pDB
@@ -117,20 +118,24 @@ class pDBExporter(pDB):  # noqa: N801
             raise ValueError(msg)
 
         self._tempdir = temp_path
-        log.debug(f'Using temporary directory {self._tempdir}')
 
     def get_next_data_to_upload(self) -> NextUploadData:
         """Get the next day to upload."""
         date_to_upload = self._get_oldest_date()
-        meas_range = (
-            self._get_range_for_date(date_to_upload, 'measurements')
-            if self._total_meas_range
-            else None
-        )
-        logs_range = (
-            self._get_range_for_date(date_to_upload, 'logs') if self._total_logs_range else None
-        )
-        log.debug(f'Generating export for {date_to_upload}, meas: {meas_range}, logs: {logs_range}')
+        try:
+            meas_range = (
+                self._get_range_for_date(date_to_upload, 'measurements')
+                if self._total_meas_range
+                else None
+            )
+        except EmptyDataRangeError:
+            meas_range = None
+        try:
+            logs_range = (
+                self._get_range_for_date(date_to_upload, 'logs') if self._total_logs_range else None
+            )
+        except EmptyDataRangeError:
+            logs_range = None
         if not meas_range and logs_range and logs_range.count < 10:
             msg = (
                 f'No measurements and only {logs_range.count} logs to upload for date '
@@ -144,7 +149,6 @@ class pDBExporter(pDB):  # noqa: N801
             date=date_to_upload,
             db_path=str(db),
         )
-        log.debug(f'Returning to upload: {rtn}')
         return rtn
 
     def _create_db(self, date_to_upload, meas_range, logs_range) -> pathlib.Path:
