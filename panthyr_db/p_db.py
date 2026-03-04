@@ -480,11 +480,11 @@ class pDB(sqlite3.Connection):  # noqa: N801
                     )
                     return None
                 cmd += 'BETWEEN ? AND ?'
-                substitution += [start - 1, stop]
+                substitution += [start, stop]
             elif start:
                 cmd += '> ?'
                 substitution += [
-                    start - 1,
+                    start,
                 ]
             elif stop:
                 cmd += '< ?'
