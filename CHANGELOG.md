@@ -4,6 +4,7 @@
 
 - fix: Fix logger naming
 - feat: Add upload in chuncks feature
+- fix: Fix offset by one error during export
 
 ## v1.1.1 (22/01/2025)
 
