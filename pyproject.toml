@@ -3,7 +3,7 @@
 [project]
 name = 'p_db'
 readme = 'README.md'
-version = 'v1.2.0'
+version = 'v1.2.1'
 description = 'Database for Panthyr'
 authors = [{ email = 'dieterv@vliz.be' }, { name = 'Dieter Vansteenwegen' }]
 classifiers = [

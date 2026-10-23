@@ -1,6 +1,6 @@
 # Changelog
 
-## Not yet released
+## v1.2.1 (23/10/2026)
 
 - fix: Define Hatch target wheel package
 
