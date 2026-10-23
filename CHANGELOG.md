@@ -1,5 +1,9 @@
 # Changelog
 
+## Not yet released
+
+- fix: Define Hatch target wheel package
+
 ## v1.2.0 (07/10/2026)
 
 - fix: Fix logger naming
